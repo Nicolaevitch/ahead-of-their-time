@@ -1,0 +1,704 @@
+{
+  "stats": {
+    "total": 9579,
+    "validated": 3091,
+    "failed": 6488
+  },
+  "valid_anchors": {
+    "intelligence": [
+      "union",
+      "volonté",
+      "liaison"
+    ],
+    "charger": [
+      "décharger",
+      "défaire",
+      "transporter"
+    ],
+    "étrange": [
+      "extraordinaire",
+      "plaisante",
+      "horrible"
+    ],
+    "mettroit": [
+      "mettoit",
+      "mettra",
+      "mette",
+      "trouvoit",
+      "voyoit"
+    ],
+    "tuilée": [
+      "puise",
+      "suiffé",
+      "puisse",
+      "pcut",
+      "pourra",
+      "poura",
+      "puifle",
+      "doive",
+      "pourroit",
+      "peut"
+    ],
+    "courut": [
+      "sortit",
+      "accourut",
+      "conduisit",
+      "s'arrêta",
+      "mena",
+      "descendit",
+      "entendit"
+    ],
+    "assembler": [
+      "élire",
+      "expédier",
+      "dresser"
+    ],
+    "apprit": [
+      "apporta",
+      "arriva",
+      "reconnut",
+      "raconta"
+    ],
+    "draps": [
+      "etoffes",
+      "étoffes",
+      "toiles"
+    ],
+    "dites": [
+      "demandez",
+      "croyez",
+      "direz"
+    ],
+    "longs": [
+      "courts",
+      "rudes",
+      "longues"
+    ],
+    "pouvait": [
+      "pourrait",
+      "devait",
+      "voulait",
+      "fallait",
+      "saurait",
+      "savait",
+      "pouvoit",
+      "allait",
+      "pouvaient",
+      "devrait"
+    ],
+    "exécuter": [
+      "executer",
+      "expédier",
+      "assembler"
+    ],
+    "poivre": [
+      "muscade",
+      "citron",
+      "canelle"
+    ],
+    "proposa": [
+      "chargea",
+      "résolut",
+      "promit",
+      "pria",
+      "ordonna",
+      "permit"
+    ],
+    "prenne": [
+      "prît",
+      "mette",
+      "prendra",
+      "fasse",
+      "reçoive",
+      "prend",
+      "croye",
+      "rende"
+    ],
+    "bateaux": [
+      "chaloupes",
+      "barques",
+      "navires",
+      "vaisseaux"
+    ],
+    "jeux": [
+      "spectacles",
+      "divertissemens",
+      "fêtes",
+      "concerts"
+    ],
+    "façons": [
+      "manieres",
+      "manières",
+      "couleurs",
+      "espèces"
+    ],
+    "l'article": [
+      "l'ordonnance",
+      "article",
+      "l'edit",
+      "articles"
+    ],
+    "dispenser": [
+      "prévaloir",
+      "permettre",
+      "servir"
+    ],
+    "soyez": [
+      "foyez",
+      "serez",
+      "n'êtes",
+      "êtes",
+      "seriez"
+    ],
+    "qu'aucune": [
+      "qu'aucun",
+      "aucune",
+      "nulle",
+      "qu'une",
+      "toute",
+      "d'une",
+      "quela",
+      "d'aucun"
+    ],
+    "plaisante": [
+      "jolie",
+      "curieuse",
+      "belle",
+      "méchante",
+      "étrange"
+    ],
+    "affaire": [
+      "aventure",
+      "conjoncture",
+      "occasion"
+    ],
+    "entré": [
+      "rentré",
+      "sorti",
+      "arrivé",
+      "allé",
+      "tombé",
+      "venu",
+      "enfermé",
+      "descendu",
+      "tombée"
+    ],
+    "grande": [
+      "prodigieuse",
+      "extrême",
+      "infinie",
+      "petite",
+      "certaine",
+      "considerable",
+      "égale",
+      "surprenante"
+    ],
+    "jeta": [
+      "jetta",
+      "jettant",
+      "tomba",
+      "leva"
+    ],
+    "ordon": [
+      "ordonnances",
+      "ordonn",
+      "ordonnance"
+    ],
+    "donnerai": [
+      "ferai",
+      "parlerai",
+      "prendrai",
+      "promets"
+    ],
+    "aime": [
+      "m'aime",
+      "j'aime",
+      "adore",
+      "n'aime",
+      "aimoit"
+    ],
+    "arrêts": [
+      "arrets",
+      "edits",
+      "sentences",
+      "jugemens",
+      "reglemens",
+      "ordonnances"
+    ],
+    "liqueur": [
+      "vapeur",
+      "huile",
+      "bouteille"
+    ],
+    "imprimer": [
+      "d'imprimer",
+      "enregistrer",
+      "publier",
+      "graver"
+    ],
+    "distinguer": [
+      "discerner",
+      "expliquer",
+      "comprendre",
+      "connoître",
+      "juger",
+      "exprimer"
+    ],
+    "mettez": [
+      "mettrez",
+      "prenez",
+      "ôtez"
+    ],
+    "etant": [
+      "étant",
+      "qu'étant",
+      "s'étant"
+    ],
+    "milan": [
+      "florence",
+      "genes",
+      "naples"
+    ],
+    "tirent": [
+      "reçoivent",
+      "prennent",
+      "portent"
+    ],
+    "osez": [
+      "pourriez",
+      "prétendez",
+      "deviez",
+      "pouviez",
+      "voudriez",
+      "vouliez",
+      "voulez",
+      "pouvez",
+      "devez"
+    ],
+    "hauteur": [
+      "longueur",
+      "largeur",
+      "profondeur",
+      "distance",
+      "grosseur"
+    ],
+    "d'icelles": [
+      "d'iceux",
+      "desdites",
+      "lesdites",
+      "d'icelui",
+      "icelles",
+      "d'icelle",
+      "desdits"
+    ],
+    "festins": [
+      "concerts",
+      "spectacles",
+      "fêtes",
+      "divertissemens",
+      "jeux"
+    ],
+    "l'original": [
+      "original",
+      "manuscrit",
+      "traduction"
+    ],
+    "sentoit": [
+      "voyoit",
+      "craignoit",
+      "favoit",
+      "sentit",
+      "croyoit",
+      "trouvoit"
+    ],
+    "s'étendent": [
+      "s'étend",
+      "s'élevent",
+      "croissent",
+      "poussent"
+    ],
+    "apôtres": [
+      "disciples",
+      "saints",
+      "juifs",
+      "patriarches",
+      "martyrs",
+      "anges"
+    ],
+    "aprés": [
+      "après",
+      "apres",
+      "aprs",
+      "aprcs"
+    ],
+    "ladite": [
+      "d'icelle",
+      "d'icelui",
+      "dudir",
+      "ledit",
+      "dudit",
+      "desdits"
+    ],
+    "longtems": [
+      "longtemps",
+      "long",
+      "tems"
+    ],
+    "telles": [
+      "certaines",
+      "quelles",
+      "pareilles"
+    ],
+    "union": [
+      "intelligence",
+      "l'union",
+      "amitié",
+      "liaison",
+      "alliance"
+    ],
+    "spectacles": [
+      "divertissemens",
+      "jeux",
+      "fêtes",
+      "concerts"
+    ],
+    "denrées": [
+      "marchandises",
+      "marchas",
+      "dises"
+    ],
+    "m'avait": [
+      "l'avait",
+      "m'avoit",
+      "s'était",
+      "j'avais",
+      "m'ayant",
+      "avait",
+      "m'ait",
+      "l'eût",
+      "avais",
+      "l'avoit"
+    ],
+    "donnent": [
+      "donneront",
+      "prennent",
+      "portent",
+      "reçoivent",
+      "donne",
+      "donnerent"
+    ],
+    "laissera": [
+      "manquera",
+      "laisse",
+      "permet"
+    ],
+    "j'allois": [
+      "j'allai",
+      "devois",
+      "pourrai",
+      "pouvois",
+      "voulois",
+      "alloit",
+      "j'étois"
+    ],
+    "heureux": [
+      "malheureux",
+      "glorieux",
+      "doux",
+      "propice"
+    ],
+    "brun": [
+      "verd",
+      "jaune",
+      "bleu",
+      "gris",
+      "rouge",
+      "blanc",
+      "noir",
+      "roux"
+    ],
+    "fonds": [
+      "revenus",
+      "arrérages",
+      "revenu",
+      "remboursement",
+      "profits"
+    ],
+    "j'avais": [
+      "m'avait",
+      "j'ai",
+      "j'avois",
+      "avait",
+      "l'avait",
+      "avais",
+      "j'eusse",
+      "j'étais",
+      "m'ayant"
+    ],
+    "demanda": [
+      "demandai",
+      "demandoit",
+      "présenta",
+      "manda",
+      "pria",
+      "promit"
+    ],
+    "edits": [
+      "arrets",
+      "ordonnances",
+      "reglemens",
+      "privileges",
+      "arrêts",
+      "statuts"
+    ],
+    "monumens": [
+      "tombeaux",
+      "historiens",
+      "antiques"
+    ],
+    "promener": [
+      "loger",
+      "reposer",
+      "divertir"
+    ],
+    "retourné": [
+      "allé",
+      "rentré",
+      "venu",
+      "retiré"
+    ],
+    "firent": [
+      "faisoient",
+      "commencerent",
+      "mirent",
+      "virent",
+      "commencèrent",
+      "vinrent",
+      "fissent"
+    ],
+    "l'empêcher": [
+      "l'obliger",
+      "obliger",
+      "empêcher"
+    ],
+    "lans": [
+      "ians",
+      "fans",
+      "sans"
+    ],
+    "prairie": [
+      "plaine",
+      "fosse",
+      "vallée"
+    ],
+    "viendront": [
+      "vont",
+      "viennent",
+      "voudront"
+    ],
+    "cherchoit": [
+      "croyoit",
+      "craignoit",
+      "vouloit",
+      "voyoit",
+      "favoit",
+      "songea",
+      "pouvoit",
+      "alloit"
+    ],
+    "neveux": [
+      "oncles",
+      "descendans",
+      "parents",
+      "freres",
+      "enfants",
+      "successeurs",
+      "frères"
+    ],
+    "avoit": [
+      "l'avoit",
+      "avoic",
+      "auroit",
+      "m'avoit",
+      "s'étoit",
+      "n'avoit",
+      "avoient",
+      "avait",
+      "l'eût",
+      "l'eut"
+    ],
+    "suive": [
+      "prenne",
+      "croye",
+      "dife",
+      "fasse",
+      "rende"
+    ],
+    "revenant": [
+      "allant",
+      "arrivant",
+      "revint",
+      "retourna",
+      "retournant",
+      "sortant"
+    ],
+    "petit": [
+      "grand",
+      "vilain",
+      "rond",
+      "joli",
+      "infini"
+    ],
+    "quoiqu'on": [
+      "quoiqu'il",
+      "quoique",
+      "l'on",
+      "qu'aucun"
+    ],
+    "vrai": [
+      "rare",
+      "clair",
+      "certain",
+      "impossible"
+    ],
+    "sortit": [
+      "entra",
+      "quitta",
+      "retira",
+      "leva",
+      "s'arrêta",
+      "courut",
+      "revint",
+      "rentra",
+      "conduisit"
+    ],
+    "entretenir": [
+      "conserver",
+      "employer",
+      "nourrir",
+      "aider",
+      "établir"
+    ],
+    "droit": [
+      "droits",
+      "privilege",
+      "fief",
+      "domaine"
+    ],
+    "immeubles": [
+      "meubles",
+      "biens",
+      "héritages",
+      "successions"
+    ],
+    "soit": [
+      "n'ait",
+      "l'ait",
+      "prenne",
+      "reçoive",
+      "rende",
+      "fasse"
+    ],
+    "abus": [
+      "fraudes",
+      "inconveniens",
+      "inconvénient",
+      "desordres"
+    ],
+    "monts": [
+      "plaines",
+      "rochers",
+      "fleuves",
+      "montagnes",
+      "rivages"
+    ],
+    "donnée": [
+      "demandée",
+      "faite",
+      "donné",
+      "accordé",
+      "envoyée",
+      "promise"
+    ],
+    "nuisible": [
+      "sujette",
+      "utile",
+      "avantageux"
+    ],
+    "omis": [
+      "rapporté",
+      "oublié",
+      "ajouté"
+    ],
+    "aimable": [
+      "charmante",
+      "amoureux",
+      "jolie",
+      "charmant",
+      "belle",
+      "agréable"
+    ],
+    "conçoit": [
+      "sçait",
+      "voit",
+      "s'imagine"
+    ],
+    "rence": [
+      "difference",
+      "differente",
+      "différence"
+    ],
+    "ruisseaux": [
+      "fontaines",
+      "rochers",
+      "fleuves",
+      "rivieres"
+    ],
+    "d'aucun": [
+      "aucun",
+      "qu'aucun",
+      "d'un",
+      "nulle",
+      "qu'un",
+      "aucune"
+    ],
+    "falloit": [
+      "faudroit",
+      "vouloit",
+      "devoit",
+      "pouvoit",
+      "fallait",
+      "fallut",
+      "faut",
+      "voudroit",
+      "alloit",
+      "s'agissoit"
+    ],
+    "magnifique": [
+      "superbe",
+      "magnifiquement",
+      "ornée",
+      "orné",
+      "magnifiques"
+    ],
+    "tenu": [
+      "tenue",
+      "promis",
+      "renu"
+    ],
+    "tcms": [
+      "teins",
+      "rems",
+      "terns",
+      "tems",
+      "temps",
+      "sejour"
+    ],
+    "l'esprit": [
+      "esprit",
+      "d'esprit",
+      "l'ame",
+      "l'entendement"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+corpus/
+corpus_clean/
+models_yao/
+models_free/
+drift_analysis/drift_consecutive.csv
+__pycache__/
+*.pyc
+*.log

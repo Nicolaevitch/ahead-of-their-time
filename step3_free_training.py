@@ -14,6 +14,13 @@ Différence clé avec l'étape 1 :
   - Les espaces vectoriels sont donc incomparables directement
     → l'alignement Procrustes (étape 4) les rendra comparables
 
+MODIFIÉ : utilise désormais corpus_common.py pour charger et segmenter le
+corpus, exactement comme step1_yao_bootstrap.py — garantit que les modèles
+libres et Yao s'entraînent sur un texte et un découpage identiques
+(auparavant : lecture ligne par ligne de corpus_clean/*.txt avec un seuil
+de longueur de mot différent de step1, sans réharmoniser les coupures de
+ligne à 50 mots posées par clean_corpus.py).
+
 Emplacement du script :
     /data/corpora/mdejurquet/new_ahead_of_their_time/train_model/step3_free_training.py
 
@@ -28,14 +35,17 @@ Usage :
     python step3_free_training.py
 """
 
-import re
+import sys
 import time
 import logging
-import numpy as np
 from pathlib import Path
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 from tqdm import tqdm
+
+# Module de chargement/segmentation partagé avec step1_yao_bootstrap.py
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corpus_common import load_period_corpus, CHUNK_SIZE, MIN_CHUNK_TOKENS, MIN_WORD_LEN
 
 
 # ==============================================================================
@@ -89,41 +99,6 @@ def setup_logging(log_path: Path) -> logging.Logger:
 
 LOG_PATH = Path(CONFIG["models_dir"]) / "step3_free_training.log"
 log      = setup_logging(LOG_PATH)
-
-
-# ==============================================================================
-# LECTURE CORPUS
-# ==============================================================================
-
-RE_MOTS = re.compile(r"\b[a-zàâçéèêëîïôùûüÿœæ']{2,}\b")
-
-def load_period_corpus(period: str, corpus_dir: str) -> list:
-    """
-    Lit le fichier .txt d'une période et le découpe en segments.
-    Identique à l'étape 1.
-    """
-    txt_path = Path(corpus_dir) / f"{period}.txt"
-
-    if not txt_path.exists():
-        log.error(f"  Fichier introuvable : {txt_path}")
-        return []
-
-    log.info(f"  Lecture : {txt_path}")
-    t0 = time.time()
-
-    segments = []
-    with open(txt_path, "r", encoding="utf-8") as f:
-        for line in tqdm(f, desc=f"  Lecture {period}", unit="ligne", leave=False):
-            line = line.strip()
-            if not line:
-                continue
-            tokens = RE_MOTS.findall(line)
-            if len(tokens) >= 5:
-                segments.append(tokens)
-
-    elapsed = time.time() - t0
-    log.info(f"  {len(segments):,} segments chargés en {elapsed:.1f}s")
-    return segments
 
 
 # ==============================================================================
@@ -205,7 +180,9 @@ def train_free_model(sentences: list, config: dict, period: str) -> Word2Vec:
 def compute_shared_vocabulary(models: dict) -> set:
     """
     Calcule le vocabulaire commun à tous les modèles libres.
-    Peut différer du vocabulaire Yao car les modèles sont indépendants.
+    Peut différer du vocabulaire Yao car les modèles sont indépendants
+    (initialisation aléatoire différente à chaque période, même si le
+    texte source et le découpage sont désormais identiques).
     """
     vocabs = [set(m.wv.key_to_index.keys()) for m in models.values()]
     shared = vocabs[0]
@@ -247,11 +224,25 @@ def run_step3(config: dict):
         log.info(f"PÉRIODE : {period} — entraînement libre from scratch")
         log.info(f"{'='*55}")
 
-        # Chargement corpus
-        sentences = load_period_corpus(period, config["corpus_dir"])
+        # Chargement + segmentation via le module partagé (corpus_common.py)
+        # — identique à ce que fait step1_yao_bootstrap.py
+        t0 = time.time()
+        try:
+            sentences = load_period_corpus(period, config["corpus_dir"])
+        except FileNotFoundError as e:
+            tqdm.write(f"  ⚠️  {e}")
+            log.error(f"  [{period}] {e}")
+            continue
+
         if not sentences:
             tqdm.write(f"  ⚠️  Corpus vide pour {period}")
             continue
+
+        elapsed_load = time.time() - t0
+        log.info(
+            f"  [{period}] {len(sentences):,} segments chargés "
+            f"(chunk_size={CHUNK_SIZE}) en {elapsed_load:.1f}s"
+        )
 
         t0 = time.time()
 
@@ -346,6 +337,7 @@ if __name__ == "__main__":
     print(f"Corpus  : {CONFIG['corpus_dir']}")
     print(f"Modèles : {CONFIG['models_dir']}")
     print(f"Périodes: {len(CONFIG['periods'])}")
+    print(f"Segmentation : blocs de {CHUNK_SIZE} tokens (harmonisée avec step1)")
     print("Contrainte Yao : AUCUNE")
     print("="*55 + "\n")
 

@@ -1,8 +1,67 @@
-corpus/
-corpus_clean/
-models_yao/
-models_free/
-drift_analysis/drift_consecutive.csv
+# ============================================================
+# Environnement Python
+# ============================================================
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+venv_gpu/
+*.egg-info/
+
+# ============================================================
+# Corpus brut et intermédiaire — volumineux, potentiellement
+# sous droits (à héberger séparément si besoin, pas sur GitHub)
+# ============================================================
+corpus/
+corpus_clean/
+corpus_detailled/by_period_macrogenre_oeuvre/
+modern_all/
+
+# ============================================================
+# Modèles Word2Vec — binaires volumineux, régénérables via la pipeline
+# ============================================================
+models_yao/
+models_free/
+models_free_genre/
+models_free_oeuvre/
+models_aligned/
+models_aligned_genre_oeuvre/
+*.bin
+*.kv
+*.kv.vectors.npy
+*.npy
+
+# ============================================================
+# Modèles BERT fine-tunés — volumineux, régénérables via la pipeline
+# ============================================================
+bonus_finetuning/outputs/
+bonus_finetuning/hf_cache/
+bert_prototypes/
+bert_prototypes_4period/
+*.safetensors
+*.pt
+*.pth
+
+# ============================================================
+# Checkpoints intermédiaires — jamais utiles hors d'un run en cours
+# ============================================================
+**/checkpoints/
+*.tmp.npz
+*.ckpt.npz
+
+# ============================================================
+# Résultats volumineux — gardez les tops/agrégats (petits), excluez
+# les fichiers bruts complets (jusqu'à plusieurs Go)
+# ============================================================
+drift_results/oeuvre_report_k*.csv
+
+# ============================================================
+# Logs — bruyants, régénérés à chaque run
+# ============================================================
 *.log
+
+# ============================================================
+# Système
+# ============================================================
+.DS_Store
+Thumbs.db

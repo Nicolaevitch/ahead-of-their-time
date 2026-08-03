@@ -4,6 +4,10 @@ PIPELINE DIACHRONIQUE — NETTOYAGE ET EXPORT DU CORPUS
 Lit les fichiers TEI de chaque période, extrait le texte brut
 depuis le <body>, nettoie et exporte un fichier .txt par période.
 
+Extraction/nettoyage factorisés dans tei_cleaning_common.py (partagé avec
+organize_corpus_by_genre.py, qui avait une copie strictement identique de
+ces fonctions).
+
 Usage :
     python clean_corpus.py
 
@@ -18,13 +22,12 @@ Structure de sortie :
         1789-1802.txt
 """
 
-import re
-import html
 import logging
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from tqdm import tqdm
 from collections import Counter
+
+from tei_cleaning_common import extract_body_text, clean_text, format_lines, count_words
 
 # ==============================================================================
 # CONFIG
@@ -66,148 +69,6 @@ def setup_logging(log_path: Path) -> logging.Logger:
 log = setup_logging(LOG_PATH)
 
 # ==============================================================================
-# EXTRACTION TEI
-# ==============================================================================
-
-def localname(tag: str) -> str:
-    return tag.split("}")[-1] if "}" in tag else tag
-
-
-def sanitize_entities(text: str) -> str:
-    """Nettoie les entités XML non standard."""
-    text = text.replace("&c.", "etc.")
-    text = text.replace("&C.", "Etc.")
-    pattern = re.compile(r"&(?!amp;|lt;|gt;|apos;|quot;)[a-zA-Z0-9#]+;?")
-    return pattern.sub(" ", text)
-
-
-def extract_body_text(path: Path) -> tuple[str, str]:
-    """
-    Extrait le texte brut du <body> d'un fichier TEI.
-    Retourne (texte_extrait, methode_utilisee).
-
-    Stratégie par priorité :
-    1. Parsing XML complet → cherche <body>
-    2. Parsing XML complet → tout sauf <teiHeader>
-    3. Extraction fragment <body> par regex + parsing
-    4. Fallback texte brut regex (suppression balises)
-    """
-
-    # Méthode 1 & 2 : parsing XML complet
-    try:
-        tree = ET.parse(path)
-        root = tree.getroot()
-
-        # Chercher <body>
-        for elem in root.iter():
-            if localname(elem.tag) == "body":
-                text = ET.tostring(elem, encoding="unicode", method="text")
-                if text.strip():
-                    return text, "xml_body"
-
-        # Pas de body : tout sauf teiHeader
-        parts = []
-        skip  = False
-        for elem in root.iter():
-            if localname(elem.tag) == "teiHeader":
-                skip = True
-            elif localname(elem.tag) == "text":
-                skip = False
-            if not skip and elem.text:
-                parts.append(elem.text)
-            if not skip and elem.tail:
-                parts.append(elem.tail)
-        text = " ".join(parts)
-        if text.strip():
-            return text, "xml_no_header"
-
-    except ET.ParseError:
-        pass
-
-    # Méthode 3 : fragment <body> par regex
-    try:
-        raw = path.read_text(encoding="utf-8", errors="ignore")
-        raw = sanitize_entities(raw)
-        start = raw.index("<body")
-        end   = raw.index("</body>") + len("</body>")
-        frag  = raw[start:end]
-        root  = ET.fromstring(f"<root>{frag}</root>")
-        text  = ET.tostring(root, encoding="unicode", method="text")
-        if text.strip():
-            return text, "fragment_body"
-    except (ValueError, ET.ParseError):
-        pass
-
-    # Méthode 4 : fallback regex — suppression de toutes les balises
-    try:
-        raw  = path.read_text(encoding="utf-8", errors="ignore")
-        raw  = sanitize_entities(raw)
-        text = re.sub(r"<[^>]+>", " ", raw)
-        if text.strip():
-            return text, "regex_fallback"
-    except Exception:
-        pass
-
-    return "", "echec"
-
-
-# ==============================================================================
-# NETTOYAGE TEXTE
-# ==============================================================================
-
-# Regex globale de compilation pour performance
-RE_PONCTUATION = re.compile(r"[^a-zàâçéèêëîïôùûüÿœæ'\s.,;:!?«»\-]")
-RE_ESPACES     = re.compile(r"\s+")
-RE_MOTS        = re.compile(r"\b[a-zàâçéèêëîïôùûüÿœæ']{2,}\b")
-
-
-def clean_text(raw: str) -> str:
-    """
-    Nettoie le texte extrait du TEI.
-    Conserve la ponctuation pour la lisibilité.
-    """
-    # Décodage entités HTML résiduelles
-    text = html.unescape(raw)
-    text = text.replace("\xa0", " ")
-
-    # Minuscules
-    text = text.lower()
-
-    # Normalisation caractères historiques
-    text = text.replace("ſ", "s")
-    text = text.replace("œ", "oe")
-    text = text.replace("æ", "ae")
-    text = text.replace("\u2019", "'")  # apostrophe typographique
-    text = text.replace("\u2018", "'")
-    text = text.replace("\u201c", "«")
-    text = text.replace("\u201d", "»")
-
-    # Suppression caractères non pertinents (chiffres, symboles...)
-    text = RE_PONCTUATION.sub(" ", text)
-
-    # Normalisation espaces
-    text = RE_ESPACES.sub(" ", text)
-
-    return text.strip()
-
-
-def format_lines(text: str, words_per_line: int = 50) -> str:
-    """
-    Reformate le texte en lignes de N mots.
-    Utile pour la lisibilité et le débogage.
-    """
-    words = text.split()
-    lines = []
-    for i in range(0, len(words), words_per_line):
-        lines.append(" ".join(words[i:i + words_per_line]))
-    return "\n".join(lines)
-
-
-def count_words(text: str) -> int:
-    return len(RE_MOTS.findall(text))
-
-
-# ==============================================================================
 # PIPELINE PAR PÉRIODE
 # ==============================================================================
 
@@ -239,7 +100,6 @@ def process_period(period: str) -> dict:
     with out_path.open("w", encoding="utf-8") as out_file:
         for path in tqdm(tei_files, desc=f"  {period}", unit="fichier", leave=False):
             try:
-                # Extraction
                 raw, method = extract_body_text(path)
                 stats["methods"][method] += 1
 
@@ -248,7 +108,6 @@ def process_period(period: str) -> dict:
                     stats["n_errors"] += 1
                     continue
 
-                # Nettoyage
                 cleaned = clean_text(raw)
 
                 if not cleaned.strip():
@@ -256,7 +115,6 @@ def process_period(period: str) -> dict:
                     stats["n_errors"] += 1
                     continue
 
-                # Formatage et écriture
                 formatted = format_lines(cleaned, WORDS_PER_LINE)
                 out_file.write(formatted + "\n\n")
 
@@ -303,7 +161,6 @@ def main():
         total_words += stats["n_words"]
         total_files += stats["n_ok"]
 
-    # Résumé final
     log.info("\n" + "=" * 60)
     log.info("RÉSUMÉ FINAL")
     log.info("=" * 60)

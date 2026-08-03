@@ -1,6 +1,6 @@
 """
-PIPELINE DIACHRONIQUE — ÉTAPE 3 : Construction des local anchors
-================================================================
+PIPELINE DIACHRONIQUE — ÉTAPE 2BIS : Construction des local anchors (MAX_ANCHORS=50)
+=====================================================================================
 Pour chaque mot du vocabulaire partagé, identifie ses voisins géométriques
 stables dans l'espace Yao → ce sont les local anchors qui serviront à l'étape 4
 pour aligner les espaces libres.
@@ -9,19 +9,22 @@ On traite TOUS les mots (stables, intermédiaires, en drift) car la contrainte
 Yao (λ=0.91) lisse les drifts réels — des mots apparemment stables à l'étape 2
 peuvent révéler un drift significatif dans les modèles libres de l'étape 4.
 
+MAX_ANCHORS = 50 pour permettre des variantes K=5/10/20/50 réellement différentes.
+
 Usage :
-    cd /data/corpora/mdejurquet/new_ahead_of_their_time
-    python step3_local_anchors.py
+    python step2bis_local_anchors.py
 
 Sorties dans /data/corpora/mdejurquet/new_ahead_of_their_time/local_anchors/ :
-    anchors_per_word.json    ← {mot_en_drift: [liste d'ancres locales]}
+    anchors_per_word.json    ← {mot: [liste d'ancres locales]}
     anchors_summary.csv      ← résumé lisible
-    step3_anchors.log
+    no_anchors.txt           ← mots sans ancres suffisantes
+    step2bis_anchors.log
 """
 
 import json
 import csv
 import logging
+import shutil
 import numpy as np
 from pathlib import Path
 from gensim.models import Word2Vec
@@ -34,7 +37,7 @@ from tqdm import tqdm
 MODELS_DIR   = Path("/data/corpora/mdejurquet/new_ahead_of_their_time/models_yao")
 DRIFT_DIR    = Path("/data/corpora/mdejurquet/new_ahead_of_their_time/drift_analysis")
 OUT_DIR      = Path("/data/corpora/mdejurquet/new_ahead_of_their_time/local_anchors")
-LOG_PATH     = OUT_DIR / "step3_anchors.log"
+LOG_PATH     = OUT_DIR / "step2bis_anchors.log"
 
 PERIODS = [
     "1700-1710", "1710-1720", "1720-1730", "1730-1740",
@@ -43,39 +46,69 @@ PERIODS = [
 ]
 
 # Paramètres de sélection des ancres
-K_NEIGHBORS    = 20   # nombre de voisins à considérer pour chaque mot cible
-MIN_ANCHORS    = 3    # nombre minimum d'ancres requises pour qu'un mot soit traitable
-MAX_ANCHORS    = 10   # nombre maximum d'ancres à retenir par mot
+K_NEIGHBORS    = 50    # voisinage pour chercher des ancres candidates
+MIN_ANCHORS    = 3     # nombre minimum d'ancres requises
+MAX_ANCHORS    = 50    # nombre maximum d'ancres à retenir par mot ← augmenté de 10 à 50
+MIN_ANCHOR_LENGTH = 4  # longueur minimale du mot ancre
 
-# Filtre qualité des ancres candidates
-MIN_ANCHOR_LENGTH = 4   # longueur minimale du mot ancre (filtre tokens courts)
+# Nombre minimum de périodes où l'ancre doit être voisine
+MIN_PERIODS_NEIGHBOR = 5  # au moins 5/10 périodes
+
 
 # ==============================================================================
 # LOGGING
 # ==============================================================================
 
 def setup_logging(log_path: Path) -> logging.Logger:
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    # Supprimer l'ancien log s'il existe
+    if log_path.exists():
+        log_path.unlink()
+
     logger = logging.getLogger("anchors")
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+
     ch = logging.StreamHandler()
     ch.setFormatter(fmt)
     logger.addHandler(ch)
+
     fh = logging.FileHandler(log_path, encoding="utf-8")
     fh.setFormatter(fmt)
     logger.addHandler(fh)
+
     return logger
 
-log = setup_logging(LOG_PATH)
 
 # ==============================================================================
-# CHARGEMENT DES DONNÉES
+# NETTOYAGE DES RÉSULTATS PRÉCÉDENTS
+# ==============================================================================
+
+def clean_previous_results(out_dir: Path):
+    """Supprime les fichiers de résultats précédents."""
+    files_to_remove = [
+        "anchors_per_word.json",
+        "anchors_summary.csv",
+        "no_anchors.txt",
+    ]
+    removed = 0
+    for fname in files_to_remove:
+        path = out_dir / fname
+        if path.exists():
+            path.unlink()
+            removed += 1
+    if removed:
+        print(f"  {removed} fichiers précédents supprimés")
+
+
+# ==============================================================================
+# CHARGEMENT
 # ==============================================================================
 
 def load_models(models_dir: Path, periods: list) -> dict:
     models = {}
-    for period in tqdm(periods, desc="Chargement modèles", unit="modèle"):
+    pbar = tqdm(periods, desc="Chargement modèles Yao", unit="modèle")
+    for period in pbar:
+        pbar.set_description(f"Chargement : {period}")
         model_path = models_dir / f"model_{period}.bin"
         if model_path.exists():
             models[period] = Word2Vec.load(str(model_path))
@@ -84,7 +117,6 @@ def load_models(models_dir: Path, periods: list) -> dict:
 
 
 def load_word_list(path: Path) -> list:
-    """Charge une liste de mots depuis un fichier texte (format: mot\tdrift\tdrift)."""
     words = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -103,32 +135,20 @@ def load_shared_vocab(models_dir: Path) -> set:
 
 
 # ==============================================================================
-# FILTRAGE DES ANCRES CANDIDATES
+# FILTRAGE DES ANCRES
 # ==============================================================================
 
 def is_valid_anchor(word: str) -> bool:
-    """
-    Filtre de qualité pour les ancres candidates.
-    Exclut les tokens qui sont probablement du bruit.
-    """
-    # Longueur minimale
+    """Filtre de qualité pour les ancres candidates."""
     if len(word) < MIN_ANCHOR_LENGTH:
         return False
-
-    # Exclure les tokens avec apostrophe en début ou fin
     if word.startswith("'") or word.endswith("'"):
         return False
-
-    # Exclure les mots qui contiennent des chiffres
     if any(c.isdigit() for c in word):
         return False
-
-    # Exclure les tokens avec caractères non-alphabétiques
-    # (sauf apostrophe interne et tiret)
     clean = word.replace("'", "").replace("-", "")
     if not clean.isalpha():
         return False
-
     return True
 
 
@@ -137,9 +157,6 @@ def is_valid_anchor(word: str) -> bool:
 # ==============================================================================
 
 def get_neighbors_in_model(model: Word2Vec, word: str, k: int) -> list:
-    """
-    Retourne les k plus proches voisins d'un mot dans un modèle.
-    """
     if word not in model.wv:
         return []
     try:
@@ -150,43 +167,36 @@ def get_neighbors_in_model(model: Word2Vec, word: str, k: int) -> list:
 
 
 def find_local_anchors(
-    drift_word: str,
+    target_word: str,
     models: dict,
     stable_words: set,
     k_neighbors: int,
-    max_anchors: int
+    max_anchors: int,
+    min_periods: int
 ) -> list:
     """
-    Pour un mot en drift, trouve ses local anchors :
-    voisins géométriques qui sont stables dans TOUTES les périodes.
+    Pour un mot cible, trouve ses local anchors :
+    voisins géométriques stables dans au moins min_periods périodes.
 
-    Algorithme :
-    1. Pour chaque période, récupérer les k voisins du mot cible
-    2. Garder les voisins qui sont stables (dans stable_words)
-    3. Garder les voisins présents dans TOUTES les périodes
-    4. Trier par fréquence d'apparition dans les voisinages
-    5. Retourner les max_anchors meilleurs
+    Retourne une liste triée par fréquence d'apparition dans les voisinages.
     """
-    periods       = list(models.keys())
-    neighbor_counts = {}  # {voisin: nombre de périodes où il est voisin}
+    periods         = list(models.keys())
+    neighbor_counts = {}
 
     for period in periods:
         model     = models[period]
-        neighbors = get_neighbors_in_model(model, drift_word, k_neighbors)
+        neighbors = get_neighbors_in_model(model, target_word, k_neighbors)
 
         for neighbor in neighbors:
-            # Filtres de qualité
-            if neighbor == drift_word:
+            if neighbor == target_word:
                 continue
             if neighbor not in stable_words:
                 continue
             if not is_valid_anchor(neighbor):
                 continue
-
             neighbor_counts[neighbor] = neighbor_counts.get(neighbor, 0) + 1
 
-    # Garder les voisins présents dans au moins la moitié des périodes
-    min_periods   = len(periods) // 2
+    # Garder les voisins présents dans au moins min_periods périodes
     valid_anchors = {
         w: count for w, count in neighbor_counts.items()
         if count >= min_periods
@@ -205,28 +215,23 @@ def validate_anchors_across_models(
     models: dict
 ) -> list:
     """
-    Étape 3.5 du pipeline : valide que les ancres sont bien
-    voisines du mot cible dans CHAQUE modèle.
-    Exclut les ancres qui se sont éloignées dans certaines périodes.
+    Valide que les ancres sont bien voisines du mot cible
+    dans CHAQUE modèle (top 50 voisins).
     """
     validated = []
     periods   = list(models.keys())
 
     for anchor in anchors:
         is_neighbor_everywhere = True
-
         for period in periods:
             model = models[period]
             if anchor not in model.wv or drift_word not in model.wv:
                 is_neighbor_everywhere = False
                 break
-
-            # Vérifier que l'ancre est dans les 50 voisins du mot cible
             neighbors = get_neighbors_in_model(model, drift_word, k=50)
             if anchor not in neighbors:
                 is_neighbor_everywhere = False
                 break
-
         if is_neighbor_everywhere:
             validated.append(anchor)
 
@@ -240,14 +245,20 @@ def validate_anchors_across_models(
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Nettoyage des résultats précédents
+    print("\nNettoyage des résultats précédents...")
+    clean_previous_results(OUT_DIR)
+
+    global log
+    log = setup_logging(LOG_PATH)
+
     log.info("=" * 60)
-    log.info("ÉTAPE 3 — CONSTRUCTION DES LOCAL ANCHORS")
+    log.info("ÉTAPE 2BIS — CONSTRUCTION DES LOCAL ANCHORS")
     log.info("=" * 60)
-    log.info(f"Modèles    : {MODELS_DIR}")
-    log.info(f"Drift dir  : {DRIFT_DIR}")
-    log.info(f"Sorties    : {OUT_DIR}")
-    log.info(f"K voisins  : {K_NEIGHBORS}")
-    log.info(f"Max ancres : {MAX_ANCHORS}")
+    log.info(f"MAX_ANCHORS    : {MAX_ANCHORS}")
+    log.info(f"K_NEIGHBORS    : {K_NEIGHBORS}")
+    log.info(f"MIN_PERIODS    : {MIN_PERIODS_NEIGHBOR}/10")
+    log.info(f"MIN_ANCHORS    : {MIN_ANCHORS}")
 
     # Chargement
     models       = load_models(MODELS_DIR, PERIODS)
@@ -261,35 +272,59 @@ def main():
     valid_stable = {w for w in stable_words if is_valid_anchor(w)}
     log.info(f"{len(valid_stable):,} mots stables valides après filtrage qualité")
 
-    # On traite TOUS les mots du vocabulaire partagé
-    # Les mots stables servent d'ancres mais on leur calcule aussi leurs propres ancres
-    # car ils peuvent dériver dans les modèles libres
+    # Tous les mots du vocabulaire partagé comme cibles
     all_target_words = [w for w in shared_vocab if is_valid_anchor(w)]
     log.info(f"{len(all_target_words):,} mots cibles à traiter")
 
-    # Construction des local anchors
+    # Construction des local anchors avec barre de progression
     anchors_per_word = {}
     no_anchors       = []
+    n_processed      = 0
 
-    for drift_word in tqdm(all_target_words, desc="Construction ancres", unit="mot"):
+    pbar = tqdm(
+        all_target_words,
+        desc="Construction ancres",
+        unit="mot",
+        position=0
+    )
+
+    for target_word in pbar:
+        n_processed += 1
+
+        # Mise à jour de la description toutes les 100 mots
+        if n_processed % 100 == 0:
+            pbar.set_postfix({
+                "avec_ancres": len(anchors_per_word),
+                "sans_ancres": len(no_anchors),
+                "taux": f"{len(anchors_per_word)/n_processed*100:.1f}%"
+            })
 
         # Trouver les ancres candidates
         anchors = find_local_anchors(
-            drift_word, models, valid_stable, K_NEIGHBORS, MAX_ANCHORS
+            target_word, models, valid_stable,
+            K_NEIGHBORS, MAX_ANCHORS, MIN_PERIODS_NEIGHBOR
         )
 
-        # Valider les ancres dans tous les modèles
+        # Valider dans tous les modèles
         if anchors:
-            validated = validate_anchors_across_models(drift_word, anchors, models)
+            validated = validate_anchors_across_models(target_word, anchors, models)
         else:
             validated = []
 
         if len(validated) >= MIN_ANCHORS:
-            anchors_per_word[drift_word] = validated
-            log.info(f"  {drift_word:<25} → {len(validated)} ancres : {validated}")
+            anchors_per_word[target_word] = validated
         else:
-            no_anchors.append(drift_word)
-            log.warning(f"  {drift_word:<25} → ancres insuffisantes ({len(validated)})")
+            no_anchors.append(target_word)
+
+        # Log intermédiaire tous les 1000 mots
+        if n_processed % 1000 == 0:
+            log.info(
+                f"  Progression : {n_processed:,}/{len(all_target_words):,} mots "
+                f"| {len(anchors_per_word):,} avec ancres "
+                f"| {len(no_anchors):,} sans ancres"
+            )
+
+    pbar.close()
 
     # Export JSON
     json_path = OUT_DIR / "anchors_per_word.json"
@@ -308,36 +343,43 @@ def main():
                 "nb_ancres": len(anchors),
                 "ancres":    ", ".join(anchors),
             })
-    log.info(f"Résumé exporté (CSV)   : {csv_path}")
+    log.info(f"Résumé exporté (CSV) : {csv_path}")
 
-    # Export mots sans ancres suffisantes
+    # Export mots sans ancres
     no_anchor_path = OUT_DIR / "no_anchors.txt"
     with open(no_anchor_path, "w", encoding="utf-8") as f:
-        f.write("# Mots en drift sans ancres locales suffisantes\n")
-        f.write("# Ces mots ne pourront pas bénéficier de l'alignement local\n\n")
+        f.write("# Mots sans ancres locales suffisantes\n\n")
         for word in no_anchors:
             f.write(word + "\n")
-    log.info(f"Mots sans ancres       : {no_anchor_path}")
+    log.info(f"Mots sans ancres : {no_anchor_path}")
 
-    # Résumé final
-    log.info("\n" + "=" * 60)
-    log.info("RÉSUMÉ FINAL")
-    log.info("=" * 60)
-    log.info(f"  Mots cibles traités         : {len(all_target_words):,}")
-    log.info(f"  Mots avec ancres suffisantes: {len(anchors_per_word):,}")
-    log.info(f"  Mots sans ancres            : {len(no_anchors):,}")
-
+    # Statistiques sur le nombre d'ancres
     if anchors_per_word:
         nb_ancres = [len(v) for v in anchors_per_word.values()]
-        log.info(f"  Ancres par mot (moyenne)    : {np.mean(nb_ancres):.1f}")
-        log.info(f"  Ancres par mot (min/max)    : {min(nb_ancres)}/{max(nb_ancres)}")
+        log.info(f"\n{'='*60}")
+        log.info("STATISTIQUES SUR LES ANCRES")
+        log.info(f"{'='*60}")
+        log.info(f"  Mots avec ancres   : {len(anchors_per_word):,}")
+        log.info(f"  Mots sans ancres   : {len(no_anchors):,}")
+        log.info(f"  Ancres/mot (moy)   : {np.mean(nb_ancres):.1f}")
+        log.info(f"  Ancres/mot (médian): {np.median(nb_ancres):.1f}")
+        log.info(f"  Ancres/mot (max)   : {max(nb_ancres)}")
+        log.info(f"  Ancres/mot (min)   : {min(nb_ancres)}")
+
+        # Distribution du nombre d'ancres
+        log.info("\n  Distribution :")
+        for threshold in [5, 10, 20, 30, 50]:
+            count = sum(1 for n in nb_ancres if n >= threshold)
+            log.info(f"    ≥{threshold:2d} ancres : {count:,} mots ({count/len(nb_ancres)*100:.1f}%)")
 
     log.info("\n" + "=" * 60)
-    log.info("✓ ÉTAPE 3 TERMINÉE")
+    log.info("✓ ÉTAPE 2BIS TERMINÉE")
     log.info(f"  → {len(anchors_per_word):,} mots avec local anchors")
-    log.info("  → Prêt pour l'étape 4 : réentraînement libre + alignement")
+    log.info(f"  → {len(no_anchors):,} mots sans ancres")
+    log.info("  → Prêt pour l'étape 3 : réentraînement libre")
     log.info("=" * 60)
 
 
 if __name__ == "__main__":
+    log = None  # sera initialisé après nettoyage
     main()

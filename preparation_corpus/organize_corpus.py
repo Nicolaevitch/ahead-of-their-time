@@ -1,8 +1,16 @@
 """
 PIPELINE DIACHRONIQUE — ORGANISATION DU CORPUS PAR DÉCENNIE
 ============================================================
-Lit metadata.csv et copie chaque fichier TEI dans le dossier
+Lit metadata_detailed.csv et copie chaque fichier TEI dans le dossier
 de sa décennie.
+
+Source des métadonnées : corpus_detailled/metadata_detailed.csv (produit
+par extract_metadata_detailed.py) — remplace l'ancien metadata.csv /
+extract_metadata.py, devenus redondants : metadata_detailed.csv contient
+déjà les colonnes 'decade' et 'filename', les seules que ce script utilise
+réellement (la colonne 'filepath' de l'ancien metadata.csv n'était jamais
+lue — le chemin source est reconstruit ci-dessous via SOURCE_DIR / filename,
+avec repli récursif si besoin).
 
 Usage :
     python organize_corpus.py
@@ -15,7 +23,7 @@ Structure de sortie :
         1710-1720/
             ...
         ...
-        1790-1801/
+        1789-1802/
             ...
 """
 
@@ -31,7 +39,7 @@ from collections import Counter
 BASE_DIR   = Path("/data/corpora/mdejurquet")
 SOURCE_DIR = BASE_DIR / "modern_all"
 OUT_DIR    = BASE_DIR / "new_ahead_of_their_time/corpus"
-METADATA   = OUT_DIR / "metadata.csv"
+METADATA   = BASE_DIR / "new_ahead_of_their_time/corpus_detailled/metadata_detailed.csv"
 
 DECADES_18E = [
     "1700-1710", "1710-1720", "1720-1730", "1730-1740",
@@ -55,7 +63,7 @@ def main():
         for row in reader:
             rows.append(row)
 
-    print(f"📚 Fichiers dans metadata.csv : {len(rows)}")
+    print(f"📚 Fichiers dans metadata_detailed.csv : {len(rows)}")
 
     counter  = Counter()
     skipped  = 0

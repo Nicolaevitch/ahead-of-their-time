@@ -1,0 +1,50 @@
+genre,genre_macro
+Économie,Économie
+GENRE_VIDE,GENRE_VIDE
+Théâtre,Théâtre
+Belles-Lettres,Belles-Lettres
+Histoire,Histoire
+Philosophie,Philosophie
+Romans,Romans
+Traductions grecques et latines,Traductions grecques et latines
+Jurisprudence,Jurisprudence
+Poésie,Poésie
+Histoire naturelle,Histoire naturelle
+Théologie,Théologie
+Arts et métiers,Arts et métiers
+not_known,GENRE_VIDE
+Comédie,Théâtre
+Proverbe,Belles-Lettres
+Presse,Presse
+Dictionnaires,Dictionnaires
+Tragédie,Théâtre
+Opuscule dramatique,Théâtre
+Mathématique,Arts et métiers
+Correspondances,Belles-Lettres
+Pamphlets,Presse
+Dialogue,Philosophie
+Tragi-comédie,Théâtre
+Parade,Théâtre
+Textes latins,Traductions grecques et latines
+Farce,Théâtre
+Compliment,Théâtre
+Divertissement,Théâtre
+Pastorale,Théâtre
+Prologue,Théâtre
+Pastorale héroïque,Théâtre
+Drame,Théâtre
+Opéra comique,Théâtre
+Mascarade,Théâtre
+Comédie-ballet,Théâtre
+Divertissement spirituel,Théâtre
+Opéra,Théâtre
+Intermède,Théâtre
+Pantomime,Théâtre
+Vaudeville,Théâtre
+Ballet,Théâtre
+Mélodrame,Théâtre
+Fait historique,Histoire
+Tragédie lyrique,Théâtre
+Pièce,Théâtre
+Comédie Parade,Théâtre
+Dialogue des morts,Théâtre

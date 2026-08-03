@@ -64,4 +64,4 @@ drift_results/oeuvre_report_k*.csv
 # Système
 # ============================================================
 .DS_Store
-Thumbs.db
+Thumbs.dbresults/
